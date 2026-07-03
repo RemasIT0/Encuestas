@@ -3,12 +3,12 @@ import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.c
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDREIECI3uhbW6-6Zj8cMzFCL12JdNRAAs",
+  apiKey: "AIzaSyDREIECl3uhbW6-6Zj8cMzfCL12JdNRAAs",
   authDomain: "encuesta-dae5e.firebaseapp.com",
   projectId: "encuesta-dae5e",
   storageBucket: "encuesta-dae5e.firebasestorage.app",
   messagingSenderId: "994636065828",
-  appId: "1:994636065828:web:93836e1f01fa0536bcb1",
+  appId: "1:994636065828:web:93836ef1f01faf0536bcb1",
   measurementId: "G-FVL969JT35"
 };
 
