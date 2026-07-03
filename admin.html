@@ -267,27 +267,28 @@
       }
     };
 
+    // FUNCIÓN SIMPLIFICADA: Un solo clic y confirmación simple
     window.deleteAllData = async () => {
-      if (!confirm('⚠️ ¿Estás seguro de que querés BORRAR TODAS las respuestas? Esta acción no se puede deshacer.')) {
-        return;
-      }
-      
-      const confirmText = prompt('Escribí "BORRAR" para confirmar:');
-      if (confirmText !== 'BORRAR') {
-        alert('Operación cancelada');
+      if (!confirm('¿Querés borrar todas las respuestas del historial?')) {
         return;
       }
       
       try {
         const snapshot = await getDocs(collection(db, "respuestas"));
+        
+        if (snapshot.size === 0) {
+          alert('No hay respuestas para borrar');
+          return;
+        }
+        
         const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
         await Promise.all(deletePromises);
         
-        alert(`✅ Se eliminaron ${snapshot.size} respuestas correctamente`);
+        alert('✅ Se borraron todas las respuestas');
         location.reload();
       } catch (error) {
         console.error('Error al borrar:', error);
-        alert('❌ Error al borrar las respuestas: ' + error.message);
+        alert('❌ Error al borrar: ' + error.message);
       }
     };
 
@@ -346,6 +347,8 @@
 
     // Almacenar las instancias de gráficos
     const charts = {};
+    let overviewPieChart = null;
+    let overviewLineChart = null;
 
     async function loadResults() {
       try {
@@ -377,6 +380,10 @@
     }
     
     function renderOverviewCharts(responses) {
+      // Destruir gráficos anteriores si existen
+      if (overviewPieChart) overviewPieChart.destroy();
+      if (overviewLineChart) overviewLineChart.destroy();
+      
       // Gráfico de TORTA - Distribución por categoría
       const categoryCounts = {};
       Object.keys(surveyStructure).forEach(cat => categoryCounts[cat] = 0);
@@ -391,7 +398,7 @@
         }
       });
       
-      new Chart(document.getElementById('overviewPie'), {
+      overviewPieChart = new Chart(document.getElementById('overviewPie'), {
         type: 'pie',
         data: {
           labels: Object.keys(categoryCounts),
@@ -448,7 +455,7 @@
         return accumulated;
       });
       
-      new Chart(document.getElementById('overviewLine'), {
+      overviewLineChart = new Chart(document.getElementById('overviewLine'), {
         type: 'line',
         data: {
           labels: sortedDates,
