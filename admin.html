@@ -208,7 +208,7 @@
         <div class="number" id="totalResponses">0</div>
       </div>
       <div class="stat-card">
-        <span class="icon">📅</span>
+        <span class="icon"></span>
         <h3>Última respuesta</h3>
         <div class="number" id="lastResponse" style="font-size: 1.3rem;">-</div>
       </div>
@@ -254,7 +254,17 @@
   </div>
 
   <script type="module">
-    import { db, collection, getDocs, deleteDoc, auth, signOut, onAuthStateChanged } from './js/firebase-config.js';
+    // ✅ IMPORTACIÓN CORREGIDA - Incluye deleteDoc y doc
+    import { 
+      db, 
+      collection, 
+      getDocs, 
+      deleteDoc, 
+      doc,
+      auth, 
+      signOut, 
+      onAuthStateChanged 
+    } from './js/firebase-config.js';
     
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = 'login.html';
@@ -281,11 +291,11 @@
           return;
         }
         
-        // ✅ CORRECCIÓN: Usar deleteDoc correctamente
-        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+        // ✅ CORRECCIÓN: Usar deleteDoc con doc() correctamente
+        const deletePromises = snapshot.docs.map(document => deleteDoc(document.ref));
         await Promise.all(deletePromises);
         
-        alert('✅ Se borraron todas las respuestas');
+        alert('✅ Se borraron todas las respuestas (' + snapshot.size + ')');
         location.reload();
       } catch (error) {
         console.error('Error al borrar:', error);
@@ -353,7 +363,7 @@
     async function loadResults() {
       try {
         const snapshot = await getDocs(collection(db, "respuestas"));
-        const responses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const responses = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         
         document.getElementById('totalResponses').textContent = responses.length;
         
@@ -582,7 +592,7 @@
             <div class="chart-header">
               <h3>${q.label.substring(0, 60)}${q.label.length > 60 ? '...' : ''}</h3>
               <div class="chart-toggle">
-                <button class="active" data-type="bar" onclick="switchChart('${chartId}', 'bar', this)">📊 Barras</button>
+                <button class="active" data-type="bar" onclick="switchChart('${chartId}', 'bar', this)"> Barras</button>
                 <button data-type="pie" onclick="switchChart('${chartId}', 'pie', this)">🥧 Torta</button>
                 <button data-type="doughnut" onclick="switchChart('${chartId}', 'doughnut', this)">🍩 Dona</button>
               </div>
