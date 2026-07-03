@@ -267,7 +267,7 @@
       }
     };
 
-    // FUNCIÓN SIMPLIFICADA: Un solo clic y confirmación simple
+    // ✅ FUNCIÓN DE BORRADO CORREGIDA
     window.deleteAllData = async () => {
       if (!confirm('¿Querés borrar todas las respuestas del historial?')) {
         return;
@@ -281,7 +281,8 @@
           return;
         }
         
-        const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
+        // ✅ CORRECCIÓN: Usar deleteDoc correctamente
+        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
         await Promise.all(deletePromises);
         
         alert('✅ Se borraron todas las respuestas');
@@ -345,7 +346,6 @@
       'rgba(107, 122, 94, 0.85)'
     ];
 
-    // Almacenar las instancias de gráficos
     const charts = {};
     let overviewPieChart = null;
     let overviewLineChart = null;
@@ -380,11 +380,9 @@
     }
     
     function renderOverviewCharts(responses) {
-      // Destruir gráficos anteriores si existen
       if (overviewPieChart) overviewPieChart.destroy();
       if (overviewLineChart) overviewLineChart.destroy();
       
-      // Gráfico de TORTA - Distribución por categoría
       const categoryCounts = {};
       Object.keys(surveyStructure).forEach(cat => categoryCounts[cat] = 0);
       
@@ -434,7 +432,6 @@
         }
       });
       
-      // Gráfico de LÍNEA - Evolución por día
       const dateCounts = {};
       responses.forEach(r => {
         if (r.fecha) {
@@ -726,14 +723,11 @@
     window.switchChart = function(chartId, type, btn) {
       if (!charts[chartId]) return;
       
-      // Actualizar botones activos
       btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
-      // Destruir gráfico anterior
       charts[chartId].instance.destroy();
       
-      // Crear nuevo gráfico según el tipo
       const { labels, data, bgColors, borderColors } = charts[chartId];
       let config;
       
