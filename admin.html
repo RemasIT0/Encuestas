@@ -25,6 +25,8 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 4px 20px rgba(82, 121, 111, 0.2);
+      flex-wrap: wrap;
+      gap: 15px;
     }
     .header h1 { font-size: 1.6rem; font-weight: 800; }
     .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -43,7 +45,7 @@
     .delete-btn { background: rgba(220, 53, 69, 0.8); }
     .delete-btn:hover { background: rgba(220, 53, 69, 1); transform: translateY(-2px); }
     
-    .container { padding: 30px 40px; max-width: 1300px; margin: 0 auto; }
+    .container { padding: 30px 40px; max-width: 1400px; margin: 0 auto; }
     
     .stats {
       display: grid;
@@ -57,10 +59,18 @@
       border-radius: 16px;
       box-shadow: 0 4px 15px rgba(82, 121, 111, 0.08);
       border: 1px solid rgba(132, 169, 140, 0.2);
+      position: relative;
     }
     .stat-card h3 { color: #6b7a5e; font-size: 0.88rem; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-card .number { font-size: 2.5rem; font-weight: 800; color: #52796f; }
     .stat-card .icon { float: right; font-size: 2rem; opacity: 0.3; }
+    
+    .overview-charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 40px;
+    }
     
     .section-title {
       color: #2d3a2e;
@@ -104,6 +114,42 @@
       font-style: italic;
     }
     .chart-container { position: relative; height: 280px; }
+    .chart-container.tall { height: 350px; }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .chart-toggle {
+      display: flex;
+      gap: 5px;
+      background: #e5dfd0;
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .chart-toggle button {
+      background: transparent;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6b7a5e;
+      transition: all 0.2s;
+    }
+    .chart-toggle button.active {
+      background: #52796f;
+      color: white;
+    }
+    .chart-toggle button:hover:not(.active) {
+      background: rgba(132, 169, 140, 0.3);
+    }
     
     .loading {
       text-align: center;
@@ -133,8 +179,12 @@
     .empty-state h3 { color: #2d3a2e; margin-bottom: 10px; }
     .empty-state p { color: #6b7a5e; }
     
+    @media (max-width: 900px) {
+      .overview-charts { grid-template-columns: 1fr; }
+    }
+    
     @media (max-width: 600px) {
-      .header { padding: 20px; flex-direction: column; gap: 15px; }
+      .header { padding: 20px; }
       .container { padding: 20px; }
       .charts-grid { grid-template-columns: 1fr; }
     }
@@ -167,8 +217,34 @@
         <h3>Preguntas analizadas</h3>
         <div class="number" id="totalQuestions">24</div>
       </div>
+      <div class="stat-card">
+        <span class="icon">⭐</span>
+        <h3>Categorías</h3>
+        <div class="number" id="totalCategories">5</div>
+      </div>
     </div>
 
+    <h2 class="section-title">📈 Resumen General</h2>
+    
+    <div class="overview-charts" id="overviewCharts">
+      <div class="chart-box">
+        <h3>🥧 Distribución por Categoría</h3>
+        <p class="question-label">Porcentaje de respuestas por sección</p>
+        <div class="chart-container tall">
+          <canvas id="overviewPie"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <h3>📈 Evolución de Respuestas</h3>
+        <p class="question-label">Respuestas acumuladas por día</p>
+        <div class="chart-container tall">
+          <canvas id="overviewLine"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">📋 Detalle por Pregunta</h2>
+    
     <div id="chartsContainer">
       <div class="loading">
         <div class="loading-spinner"></div>
@@ -259,11 +335,22 @@
       { bg: 'rgba(217, 181, 151, 0.75)', border: '#d9b597' },
       { bg: 'rgba(107, 122, 94, 0.75)', border: '#6b7a5e' }
     ];
+    
+    const pieColors = [
+      'rgba(82, 121, 111, 0.85)',
+      'rgba(132, 169, 140, 0.85)',
+      'rgba(201, 123, 99, 0.85)',
+      'rgba(217, 181, 151, 0.85)',
+      'rgba(107, 122, 94, 0.85)'
+    ];
+
+    // Almacenar las instancias de gráficos
+    const charts = {};
 
     async function loadResults() {
       try {
         const snapshot = await getDocs(collection(db, "respuestas"));
-        const responses = snapshot.docs.map(doc => doc.data());
+        const responses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
         document.getElementById('totalResponses').textContent = responses.length;
         
@@ -275,6 +362,7 @@
           document.getElementById('lastResponse').textContent = lastDate;
         }
 
+        renderOverviewCharts(responses);
         renderCharts(responses);
       } catch (error) {
         console.error('Error:', error);
@@ -286,6 +374,156 @@
           </div>
         `;
       }
+    }
+    
+    function renderOverviewCharts(responses) {
+      // Gráfico de TORTA - Distribución por categoría
+      const categoryCounts = {};
+      Object.keys(surveyStructure).forEach(cat => categoryCounts[cat] = 0);
+      
+      responses.forEach(r => {
+        if (r.respuestas) {
+          Object.keys(surveyStructure).forEach(category => {
+            surveyStructure[category].forEach(q => {
+              if (r.respuestas[q.key]) categoryCounts[category]++;
+            });
+          });
+        }
+      });
+      
+      new Chart(document.getElementById('overviewPie'), {
+        type: 'pie',
+        data: {
+          labels: Object.keys(categoryCounts),
+          datasets: [{
+            data: Object.values(categoryCounts),
+            backgroundColor: pieColors,
+            borderColor: '#fdfcf8',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                padding: 15,
+                font: { size: 12, weight: '600' },
+                color: '#2d3a2e'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                  const percent = ((ctx.raw / total) * 100).toFixed(1);
+                  return `${ctx.label}: ${ctx.raw} (${percent}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      // Gráfico de LÍNEA - Evolución por día
+      const dateCounts = {};
+      responses.forEach(r => {
+        if (r.fecha) {
+          const date = new Date(r.fecha).toLocaleDateString('es-AR');
+          dateCounts[date] = (dateCounts[date] || 0) + 1;
+        }
+      });
+      
+      const sortedDates = Object.keys(dateCounts).sort((a, b) => {
+        const [da, ma, ya] = a.split('/').map(Number);
+        const [db, mb, yb] = b.split('/').map(Number);
+        return new Date(ya, ma-1, da) - new Date(yb, mb-1, db);
+      });
+      
+      let accumulated = 0;
+      const accumulatedData = sortedDates.map(date => {
+        accumulated += dateCounts[date];
+        return accumulated;
+      });
+      
+      new Chart(document.getElementById('overviewLine'), {
+        type: 'line',
+        data: {
+          labels: sortedDates,
+          datasets: [
+            {
+              label: 'Respuestas por día',
+              data: sortedDates.map(d => dateCounts[d]),
+              borderColor: '#c97b63',
+              backgroundColor: 'rgba(201, 123, 99, 0.1)',
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Acumulado',
+              data: accumulatedData,
+              borderColor: '#52796f',
+              backgroundColor: 'rgba(82, 121, 111, 0.1)',
+              tension: 0.4,
+              fill: false,
+              borderDash: [5, 5],
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: '#2d3a2e',
+                font: { weight: '600' }
+              }
+            }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Respuestas por día',
+                color: '#c97b63'
+              },
+              ticks: { color: '#c97b63' },
+              grid: { color: 'rgba(132, 169, 140, 0.1)' }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Acumulado',
+                color: '#52796f'
+              },
+              ticks: { color: '#52796f' },
+              grid: { drawOnChartArea: false }
+            },
+            x: {
+              ticks: { color: '#2d3a2e', font: { weight: '600' } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
     }
 
     function renderCharts(responses) {
@@ -303,7 +541,7 @@
         return;
       }
 
-      Object.entries(surveyStructure).forEach(([category, questions]) => {
+      Object.entries(surveyStructure).forEach(([category, questions], catIndex) => {
         const sectionTitle = document.createElement('h2');
         sectionTitle.className = 'section-title';
         sectionTitle.textContent = category;
@@ -313,7 +551,7 @@
         grid.className = 'charts-grid';
         container.appendChild(grid);
 
-        questions.forEach(q => {
+        questions.forEach((q, qIndex) => {
           const counts = {};
           let total = 0;
           
@@ -329,67 +567,179 @@
 
           const labels = Object.keys(counts);
           const data = labels.map(l => ((counts[l] / total) * 100).toFixed(1));
-          const bgColors = labels.map((_, i) => colors[i % colors.length].bg);
-          const borderColors = labels.map((_, i) => colors[i % colors.length].border);
+          const bgColors = labels.map((_, i) => colors[(catIndex + i) % colors.length].bg);
+          const borderColors = labels.map((_, i) => colors[(catIndex + i) % colors.length].border);
 
           const chartDiv = document.createElement('div');
           chartDiv.className = 'chart-box';
-          const canvasId = `chart-${q.key.replace('_', '-')}`;
+          const chartId = `chart-${q.key.replace('_', '-')}`;
+          
           chartDiv.innerHTML = `
-            <h3>${q.label.substring(0, 70)}${q.label.length > 70 ? '...' : ''}</h3>
+            <div class="chart-header">
+              <h3>${q.label.substring(0, 60)}${q.label.length > 60 ? '...' : ''}</h3>
+              <div class="chart-toggle">
+                <button class="active" data-type="bar" onclick="switchChart('${chartId}', 'bar', this)">📊 Barras</button>
+                <button data-type="pie" onclick="switchChart('${chartId}', 'pie', this)">🥧 Torta</button>
+                <button data-type="doughnut" onclick="switchChart('${chartId}', 'doughnut', this)">🍩 Dona</button>
+              </div>
+            </div>
             <p class="question-label">Basado en ${total} respuestas</p>
             <div class="chart-container">
-              <canvas id="${canvasId}"></canvas>
+              <canvas id="${chartId}"></canvas>
             </div>
           `;
           grid.appendChild(chartDiv);
 
           setTimeout(() => {
-            new Chart(document.getElementById(canvasId), {
-              type: 'bar',
-              data: {
-                labels: labels,
-                datasets: [{
-                  label: 'Porcentaje (%)',
-                  data: data,
-                  backgroundColor: bgColors,
-                  borderColor: borderColors,
-                  borderWidth: 2,
-                  borderRadius: 8
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: (ctx) => `${ctx.parsed.y}%`
-                    }
-                  }
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                      callback: v => v + '%',
-                      color: '#6b7a5e'
-                    },
-                    grid: { color: 'rgba(132, 169, 140, 0.1)' }
-                  },
-                  x: {
-                    ticks: { color: '#2d3a2e', font: { weight: '600' } },
-                    grid: { display: false }
-                  }
-                }
-              }
-            });
+            charts[chartId] = {
+              labels,
+              data,
+              bgColors,
+              borderColors,
+              instance: new Chart(document.getElementById(chartId), createBarChart(labels, data, bgColors, borderColors))
+            };
           }, 100);
         });
       });
     }
+    
+    function createBarChart(labels, data, bgColors, borderColors) {
+      return {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Porcentaje (%)',
+            data: data,
+            backgroundColor: bgColors,
+            borderColor: borderColors,
+            borderWidth: 2,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.parsed.y}%`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { 
+                callback: v => v + '%',
+                color: '#6b7a5e'
+              },
+              grid: { color: 'rgba(132, 169, 140, 0.1)' }
+            },
+            x: {
+              ticks: { color: '#2d3a2e', font: { weight: '600' } },
+              grid: { display: false }
+            }
+          }
+        }
+      };
+    }
+    
+    function createPieChart(labels, data, bgColors, borderColors) {
+      return {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: bgColors,
+            borderColor: '#fdfcf8',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                padding: 10,
+                font: { size: 11, weight: '600' },
+                color: '#2d3a2e'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${ctx.parsed}%`
+              }
+            }
+          }
+        }
+      };
+    }
+    
+    function createDoughnutChart(labels, data, bgColors, borderColors) {
+      return {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: bgColors,
+            borderColor: '#fdfcf8',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                padding: 10,
+                font: { size: 11, weight: '600' },
+                color: '#2d3a2e'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${ctx.parsed}%`
+              }
+            }
+          }
+        }
+      };
+    }
+    
+    window.switchChart = function(chartId, type, btn) {
+      if (!charts[chartId]) return;
+      
+      // Actualizar botones activos
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Destruir gráfico anterior
+      charts[chartId].instance.destroy();
+      
+      // Crear nuevo gráfico según el tipo
+      const { labels, data, bgColors, borderColors } = charts[chartId];
+      let config;
+      
+      if (type === 'bar') {
+        config = createBarChart(labels, data, bgColors, borderColors);
+      } else if (type === 'pie') {
+        config = createPieChart(labels, data, bgColors, borderColors);
+      } else if (type === 'doughnut') {
+        config = createDoughnutChart(labels, data, bgColors, borderColors);
+      }
+      
+      charts[chartId].instance = new Chart(document.getElementById(chartId), config);
+    };
 
     loadResults();
   </script>
