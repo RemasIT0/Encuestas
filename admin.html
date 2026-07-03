@@ -27,8 +27,8 @@
       box-shadow: 0 4px 20px rgba(82, 121, 111, 0.2);
     }
     .header h1 { font-size: 1.6rem; font-weight: 800; }
-    .header-actions { display: flex; gap: 10px; align-items: center; }
-    .logout-btn, .refresh-btn {
+    .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .logout-btn, .refresh-btn, .delete-btn {
       background: rgba(255,255,255,0.2);
       color: white;
       border: none;
@@ -40,6 +40,8 @@
       transition: all 0.3s;
     }
     .logout-btn:hover, .refresh-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+    .delete-btn { background: rgba(220, 53, 69, 0.8); }
+    .delete-btn:hover { background: rgba(220, 53, 69, 1); transform: translateY(-2px); }
     
     .container { padding: 30px 40px; max-width: 1300px; margin: 0 auto; }
     
@@ -143,6 +145,7 @@
     <h1>📊 Panel de Resultados</h1>
     <div class="header-actions">
       <button class="refresh-btn" onclick="location.reload()">🔄 Actualizar</button>
+      <button class="delete-btn" onclick="deleteAllData()">🗑️ Borrar Todo</button>
       <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
     </div>
   </div>
@@ -175,7 +178,7 @@
   </div>
 
   <script type="module">
-    import { db, collection, getDocs, auth, signOut, onAuthStateChanged } from './js/firebase-config.js';
+    import { db, collection, getDocs, deleteDoc, auth, signOut, onAuthStateChanged } from './js/firebase-config.js';
     
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = 'login.html';
@@ -185,6 +188,30 @@
       if (confirm('¿Cerrar sesión?')) {
         await signOut(auth);
         window.location.href = 'login.html';
+      }
+    };
+
+    window.deleteAllData = async () => {
+      if (!confirm('⚠️ ¿Estás seguro de que querés BORRAR TODAS las respuestas? Esta acción no se puede deshacer.')) {
+        return;
+      }
+      
+      const confirmText = prompt('Escribí "BORRAR" para confirmar:');
+      if (confirmText !== 'BORRAR') {
+        alert('Operación cancelada');
+        return;
+      }
+      
+      try {
+        const snapshot = await getDocs(collection(db, "respuestas"));
+        const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
+        await Promise.all(deletePromises);
+        
+        alert(`✅ Se eliminaron ${snapshot.size} respuestas correctamente`);
+        location.reload();
+      } catch (error) {
+        console.error('Error al borrar:', error);
+        alert('❌ Error al borrar las respuestas: ' + error.message);
       }
     };
 
