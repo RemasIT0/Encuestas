@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Resultados</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { 
+      background: 
+        radial-gradient(circle at 20% 10%, #e8efe5 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #f5e6d3 0%, transparent 50%),
+        linear-gradient(135deg, #f4f1ea 0%, #e8e4d9 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #52796f 0%, #84a98c 100%);
+      color: white;
+      padding: 25px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(82, 121, 111, 0.2);
+    }
+    .header h1 { font-size: 1.6rem; font-weight: 800; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .logout-btn, .refresh-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+    .logout-btn:hover, .refresh-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+    
+    .container { padding: 30px 40px; max-width: 1300px; margin: 0 auto; }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #fdfcf8;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(82, 121, 111, 0.08);
+      border: 1px solid rgba(132, 169, 140, 0.2);
+    }
+    .stat-card h3 { color: #6b7a5e; font-size: 0.88rem; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .number { font-size: 2.5rem; font-weight: 800; color: #52796f; }
+    .stat-card .icon { float: right; font-size: 2rem; opacity: 0.3; }
+    
+    .section-title {
+      color: #2d3a2e;
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin: 35px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::before {
+      content: '';
+      width: 6px;
+      height: 28px;
+      background: linear-gradient(180deg, #84a98c, #52796f);
+      border-radius: 3px;
+    }
+    
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 25px;
+    }
+    .chart-box {
+      background: #fdfcf8;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(82, 121, 111, 0.08);
+      border: 1px solid rgba(132, 169, 140, 0.2);
+    }
+    .chart-box h3 { 
+      color: #2d3a2e; 
+      margin-bottom: 5px; 
+      font-size: 1.05rem; 
+      font-weight: 700;
+    }
+    .chart-box .question-label {
+      color: #6b7a5e;
+      font-size: 0.85rem;
+      margin-bottom: 18px;
+      font-style: italic;
+    }
+    .chart-container { position: relative; height: 280px; }
+    
+    .loading {
+      text-align: center;
+      padding: 80px 20px;
+      color: #6b7a5e;
+      font-size: 1.1rem;
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e5dfd0;
+      border-top-color: #52796f;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: #fdfcf8;
+      border-radius: 16px;
+      border: 2px dashed #d4cfc0;
+    }
+    .empty-state .icon { font-size: 4rem; margin-bottom: 15px; opacity: 0.5; }
+    .empty-state h3 { color: #2d3a2e; margin-bottom: 10px; }
+    .empty-state p { color: #6b7a5e; }
+    
+    @media (max-width: 600px) {
+      .header { padding: 20px; flex-direction: column; gap: 15px; }
+      .container { padding: 20px; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 Panel de Resultados</h1>
+    <div class="header-actions">
+      <button class="refresh-btn" onclick="location.reload()">🔄 Actualizar</button>
+      <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card">
+        <span class="icon">📝</span>
+        <h3>Total de respuestas</h3>
+        <div class="number" id="totalResponses">0</div>
+      </div>
+      <div class="stat-card">
+        <span class="icon">📅</span>
+        <h3>Última respuesta</h3>
+        <div class="number" id="lastResponse" style="font-size: 1.3rem;">-</div>
+      </div>
+      <div class="stat-card">
+        <span class="icon">📊</span>
+        <h3>Preguntas analizadas</h3>
+        <div class="number" id="totalQuestions">24</div>
+      </div>
+    </div>
+
+    <div id="chartsContainer">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        Cargando resultados...
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, collection, getDocs, auth, signOut, onAuthStateChanged } from './js/firebase-config.js';
+    
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = 'login.html';
+    });
+
+    window.logout = async () => {
+      if (confirm('¿Cerrar sesión?')) {
+        await signOut(auth);
+        window.location.href = 'login.html';
+      }
+    };
+
+    const surveyStructure = {
+      'Información General': [
+        { key: 'q1_0', label: '¿Recibe la información necesaria para desempeñarse en su puesto?' },
+        { key: 'q1_1', label: '¿Los medios de comunicación del área son adecuados?' },
+        { key: 'q1_2', label: '¿La comunicación entre áreas es adecuada?' },
+        { key: 'q1_3', label: '¿Los comunicados son fáciles de entender?' },
+        { key: 'q1_4', label: '¿Su superior comunica claramente tareas y objetivos?' }
+      ],
+      'Liderazgo': [
+        { key: 'q2_0', label: '¿Su superior demuestra capacidad para dirigir el equipo?' },
+        { key: 'q2_1', label: '¿Su superior promueve el cumplimiento de los objetivos del área?' },
+        { key: 'q2_2', label: '¿Recibe retroalimentación útil?' },
+        { key: 'q2_3', label: '¿Confía en las decisiones de su superior?' },
+        { key: 'q2_4', label: '¿Su superior brinda apoyo cuando surgen dificultades laborales?' }
+      ],
+      'Capacitación': [
+        { key: 'q3_0', label: '¿Recibió una capacitación adecuada para realizar su trabajo de manera eficiente?' },
+        { key: 'q3_1', label: '¿Alguna vez ha tenido dificultad a la hora de realizar tareas por falta de capacitación?' },
+        { key: 'q3_2', label: '¿Considera necesario recibir más capacitaciones para desempeñar mejor su trabajo?' },
+        { key: 'q3_3', label: '¿Ha participado en alguna capacitación durante el último año?' },
+        { key: 'q3_4', label: '¿Las capacitaciones recibidas han sido útiles para su trabajo?' }
+      ],
+      'Evaluación de Desempeño': [
+        { key: 'q4_0', label: '¿Recibió alguna vez una evaluación de desempeño?' },
+        { key: 'q4_1', label: '¿Recibió una explicación de los resultados obtenidos?' },
+        { key: 'q4_2', label: '¿Conoce los criterios utilizados para evaluar su desempeño?' },
+        { key: 'q4_3', label: '¿Considera que una evaluación de desempeño favorecería el desempeño de los empleados?' },
+        { key: 'q4_4', label: '¿Considera importante implementar evaluaciones de desempeño en la empresa?' }
+      ],
+      'Satisfacción Laboral': [
+        { key: 'q5_0', label: '¿Se siente satisfecho con su trabajo actual?' },
+        { key: 'q5_1', label: '¿Se siente valorado por la organización?' },
+        { key: 'q5_2', label: '¿Está conforme con el ambiente laboral?' },
+        { key: 'q5_3', label: '¿Considera que existen oportunidades de crecimiento?' }
+      ]
+    };
+
+    const colors = [
+      { bg: 'rgba(82, 121, 111, 0.75)', border: '#52796f' },
+      { bg: 'rgba(132, 169, 140, 0.75)', border: '#84a98c' },
+      { bg: 'rgba(201, 123, 99, 0.75)', border: '#c97b63' },
+      { bg: 'rgba(217, 181, 151, 0.75)', border: '#d9b597' },
+      { bg: 'rgba(107, 122, 94, 0.75)', border: '#6b7a5e' }
+    ];
+
+    async function loadResults() {
+      try {
+        const snapshot = await getDocs(collection(db, "respuestas"));
+        const responses = snapshot.docs.map(doc => doc.data());
+        
+        document.getElementById('totalResponses').textContent = responses.length;
+        
+        if (responses.length > 0) {
+          const sorted = responses.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+          const lastDate = new Date(sorted[0].fecha).toLocaleDateString('es-AR', { 
+            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+          document.getElementById('lastResponse').textContent = lastDate;
+        }
+
+        renderCharts(responses);
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('chartsContainer').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⚠️</div>
+            <h3>Error al cargar</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderCharts(responses) {
+      const container = document.getElementById('chartsContainer');
+      container.innerHTML = '';
+      
+      if (responses.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <h3>Aún no hay respuestas</h3>
+            <p>Compartí el link de la encuesta para empezar a recibir respuestas</p>
+          </div>
+        `;
+        return;
+      }
+
+      Object.entries(surveyStructure).forEach(([category, questions]) => {
+        const sectionTitle = document.createElement('h2');
+        sectionTitle.className = 'section-title';
+        sectionTitle.textContent = category;
+        container.appendChild(sectionTitle);
+
+        const grid = document.createElement('div');
+        grid.className = 'charts-grid';
+        container.appendChild(grid);
+
+        questions.forEach(q => {
+          const counts = {};
+          let total = 0;
+          
+          responses.forEach(r => {
+            const answer = r.respuestas?.[q.key];
+            if (answer) {
+              counts[answer] = (counts[answer] || 0) + 1;
+              total++;
+            }
+          });
+
+          if (total === 0) return;
+
+          const labels = Object.keys(counts);
+          const data = labels.map(l => ((counts[l] / total) * 100).toFixed(1));
+          const bgColors = labels.map((_, i) => colors[i % colors.length].bg);
+          const borderColors = labels.map((_, i) => colors[i % colors.length].border);
+
+          const chartDiv = document.createElement('div');
+          chartDiv.className = 'chart-box';
+          const canvasId = `chart-${q.key.replace('_', '-')}`;
+          chartDiv.innerHTML = `
+            <h3>${q.label.substring(0, 70)}${q.label.length > 70 ? '...' : ''}</h3>
+            <p class="question-label">Basado en ${total} respuestas</p>
+            <div class="chart-container">
+              <canvas id="${canvasId}"></canvas>
+            </div>
+          `;
+          grid.appendChild(chartDiv);
+
+          setTimeout(() => {
+            new Chart(document.getElementById(canvasId), {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Porcentaje (%)',
+                  data: data,
+                  backgroundColor: bgColors,
+                  borderColor: borderColors,
+                  borderWidth: 2,
+                  borderRadius: 8
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (ctx) => `${ctx.parsed.y}%`
+                    }
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                      callback: v => v + '%',
+                      color: '#6b7a5e'
+                    },
+                    grid: { color: 'rgba(132, 169, 140, 0.1)' }
+                  },
+                  x: {
+                    ticks: { color: '#2d3a2e', font: { weight: '600' } },
+                    grid: { display: false }
+                  }
+                }
+              }
+            });
+          }, 100);
+        });
+      });
+    }
+
+    loadResults();
+  </script>
+</body>
+</html>

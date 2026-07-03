@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      min-height: 100vh;
+      background: 
+        radial-gradient(circle at 20% 10%, #e8efe5 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #f5e6d3 0%, transparent 50%),
+        linear-gradient(135deg, #f4f1ea 0%, #e8e4d9 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-container {
+      background: #fdfcf8;
+      padding: 45px 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(82, 121, 111, 0.15);
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid rgba(132, 169, 140, 0.2);
+    }
+    .icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #52796f, #84a98c);
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+    }
+    h1 { color: #2d3a2e; margin-bottom: 8px; text-align: center; font-weight: 800; font-size: 1.6rem; }
+    .subtitle { color: #6b7a5e; margin-bottom: 30px; text-align: center; font-size: 0.95rem; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; color: #2d3a2e; margin-bottom: 8px; font-weight: 700; font-size: 0.92rem; }
+    input {
+      width: 100%;
+      padding: 13px 15px;
+      border: 2px solid #d4cfc0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: white;
+      transition: all 0.3s;
+    }
+    input:focus { outline: none; border-color: #84a98c; box-shadow: 0 0 0 3px rgba(132, 169, 140, 0.15); }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #c97b63, #b5634d);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(201, 123, 99, 0.35); }
+    .error {
+      background: #fde8e1;
+      color: #b5634d;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-left: 4px solid #c97b63;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+      color: #6b7a5e;
+      font-size: 0.88rem;
+    }
+    .back-link a { color: #52796f; text-decoration: none; font-weight: 600; }
+    .back-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="icon">🔐</div>
+    <h1>Panel de Administración</h1>
+    <p class="subtitle">Acceso exclusivo para administradores</p>
+    <div class="error" id="errorMsg"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required placeholder="admin@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <button type="submit">Ingresar →</button>
+    </form>
+    <div class="back-link">
+      <a href="index.html">← Volver a la encuesta</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, signInWithEmailAndPassword } from './js/firebase-config.js';
+    
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = 'admin.html';
+      } catch (error) {
+        errorMsg.textContent = '❌ Email o contraseña incorrectos';
+        errorMsg.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

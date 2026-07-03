@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encuesta de Clima Laboral</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; }
+  
+  body {
+    min-height: 100vh;
+    background: 
+      radial-gradient(circle at 20% 10%, #e8efe5 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, #f5e6d3 0%, transparent 50%),
+      linear-gradient(135deg, #f4f1ea 0%, #e8e4d9 100%);
+    background-attachment: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #2d3a2e;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 820px;
+    background: #fdfcf8;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(82, 121, 111, 0.15), 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border: 1px solid rgba(132, 169, 140, 0.2);
+  }
+
+  .header {
+    padding: 35px 40px 25px;
+    background: linear-gradient(135deg, #52796f 0%, #84a98c 100%);
+    color: white;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .header h1 {
+    font-size: 1.9rem;
+    margin-bottom: 10px;
+    font-weight: 800;
+    position: relative;
+    letter-spacing: -0.5px;
+  }
+
+  .header p {
+    opacity: 0.95;
+    font-size: 0.98rem;
+    position: relative;
+    font-weight: 500;
+  }
+
+  .progress-container {
+    padding: 22px 40px;
+    background: #f8f5ee;
+    border-bottom: 1px solid #e5dfd0;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    color: #52796f;
+    font-weight: 700;
+  }
+
+  .progress-bar {
+    height: 10px;
+    background: #e5dfd0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #84a98c, #52796f);
+    border-radius: 10px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  .steps-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    gap: 6px;
+  }
+
+  .step-dot {
+    flex: 1;
+    height: 5px;
+    background: #e5dfd0;
+    border-radius: 5px;
+    transition: all 0.3s;
+  }
+
+  .step-dot.active {
+    background: linear-gradient(90deg, #84a98c, #52796f);
+  }
+
+  .content {
+    padding: 40px 45px;
+    min-height: 400px;
+  }
+
+  .step {
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .step.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-title {
+    font-size: 1.6rem;
+    color: #2d3a2e;
+    margin-bottom: 8px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  .step-title::before {
+    content: '';
+    width: 8px;
+    height: 32px;
+    background: linear-gradient(180deg, #84a98c, #52796f);
+    border-radius: 4px;
+  }
+
+  .step-subtitle {
+    color: #6b7a5e;
+    margin-bottom: 30px;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .question {
+    margin-bottom: 28px;
+    padding: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #faf8f2 100%);
+    border-radius: 16px;
+    border: 2px solid #e5dfd0;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(82, 121, 111, 0.04);
+  }
+
+  .question:hover {
+    border-color: #84a98c;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(82, 121, 111, 0.1);
+  }
+
+  .question-text {
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #2d3a2e;
+    font-size: 1.08rem;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .question-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #52796f, #84a98c);
+    color: white;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(82, 121, 111, 0.3);
+  }
+
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .option-btn {
+    flex: 1;
+    min-width: 130px;
+    padding: 14px 18px;
+    border: 2px solid #d4cfc0;
+    background: white;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #4a5548;
+    transition: all 0.25s;
+    text-align: center;
+    position: relative;
+  }
+
+  .option-btn:hover {
+    border-color: #84a98c;
+    color: #52796f;
+    transform: translateY(-2px);
+    background: #f5f1e6;
+    box-shadow: 0 4px 12px rgba(82, 121, 111, 0.15);
+  }
+
+  .option-btn.selected {
+    background: linear-gradient(135deg, #52796f, #84a98c);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(82, 121, 111, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .option-btn.selected::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #c97b63;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .footer {
+    padding: 22px 45px 30px;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    border-top: 1px solid #e5dfd0;
+    background: #f8f5ee;
+  }
+
+  .btn {
+    padding: 13px 32px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-prev {
+    background: white;
+    color: #52796f;
+    border: 2px solid #d4cfc0;
+  }
+
+  .btn-prev:hover:not(:disabled) {
+    background: #f5f1e6;
+    border-color: #84a98c;
+  }
+
+  .btn-next {
+    background: linear-gradient(135deg, #c97b63, #b5634d);
+    color: white;
+    margin-left: auto;
+    box-shadow: 0 4px 15px rgba(201, 123, 99, 0.35);
+  }
+
+  .btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(201, 123, 99, 0.45);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .welcome-screen {
+    text-align: center;
+    padding: 30px 20px;
+  }
+
+  .welcome-icon {
+    font-size: 4.5rem;
+    margin-bottom: 20px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .welcome-screen h2 {
+    font-size: 2rem;
+    color: #2d3a2e;
+    margin-bottom: 15px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .welcome-screen p {
+    color: #6b7a5e;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.02rem;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 35px;
+  }
+
+  .feature {
+    padding: 22px 15px;
+    background: linear-gradient(135deg, #f5f1e6, #e8efe5);
+    border-radius: 14px;
+    text-align: center;
+    border: 1px solid #d4cfc0;
+    transition: all 0.3s;
+  }
+
+  .feature:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(82, 121, 111, 0.1);
+  }
+
+  .feature-icon {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+  }
+
+  .feature-text {
+    font-size: 0.92rem;
+    color: #52796f;
+    font-weight: 700;
+  }
+
+  .end-screen {
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .success-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #84a98c, #52796f);
+    border-radius: 50%;
+    margin: 0 auto 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3.2rem;
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 30px rgba(82, 121, 111, 0.3);
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+  .end-screen h2 {
+    font-size: 2rem;
+    color: #2d3a2e;
+    margin-bottom: 12px;
+    font-weight: 800;
+  }
+
+  .end-screen p {
+    color: #6b7a5e;
+    margin-bottom: 25px;
+    line-height: 1.7;
+    font-size: 1.02rem;
+  }
+
+  .summary {
+    background: #f8f5ee;
+    border-radius: 14px;
+    padding: 25px;
+    margin: 25px 0;
+    text-align: left;
+    border: 1px solid #e5dfd0;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed #d4cfc0;
+    font-size: 0.92rem;
+    gap: 15px;
+  }
+
+  .summary-item:last-child {
+    border-bottom: none;
+  }
+
+  .summary-label {
+    color: #6b7a5e;
+    flex: 1;
+  }
+
+  .summary-value {
+    font-weight: 700;
+    color: #52796f;
+    background: #e8efe5;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+  }
+
+  .error-msg {
+    background: #fde8e1;
+    color: #b5634d;
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    display: none;
+    animation: shake 0.4s;
+    border-left: 4px solid #c97b63;
+  }
+
+  .error-msg.show {
+    display: block;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  @media (max-width: 600px) {
+    .header { padding: 28px 22px 18px; }
+    .header h1 { font-size: 1.5rem; }
+    .content { padding: 28px 22px; }
+    .footer { padding: 18px 22px 24px; }
+    .progress-container { padding: 18px 22px; }
+    .option-btn { min-width: 100%; padding: 13px 16px; }
+    .btn { padding: 11px 22px; font-size: 0.92rem; }
+    .step-title { font-size: 1.35rem; }
+    .question-text { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🌿 Encuesta de Clima Laboral</h1>
+    <p>Tu opinión es muy importante para mejorar nuestro ambiente de trabajo</p>
+  </div>
+
+  <div class="progress-container" id="progressContainer" style="display:none;">
+    <div class="progress-info">
+      <span id="stepLabel">Paso 1 de 5</span>
+      <span id="percentLabel">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="steps-indicator" id="stepsIndicator"></div>
+  </div>
+
+  <div class="content" id="content">
+    <!-- Welcome Screen -->
+    <div class="step active" data-step="welcome">
+      <div class="welcome-screen">
+        <div class="welcome-icon">🌱</div>
+        <h2>¡Bienvenido/a!</h2>
+        <p>Esta encuesta busca conocer tu percepción sobre diferentes aspectos de la empresa. Tus respuestas son <strong>confidenciales</strong> y nos ayudarán a mejorar.</p>
+        <p>Completar la encuesta te tomará aproximadamente <strong>5 minutos</strong>.</p>
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">📝</div>
+            <div class="feature-text">24 preguntas</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">⏱️</div>
+            <div class="feature-text">5 minutos</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-text">Confidencial</div>
+          </div>
+        </div>
+        <button class="btn btn-next" onclick="nextStep()" style="margin: 35px auto 0; padding: 16px 45px; font-size: 1.08rem;">
+          Comenzar encuesta →
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 1: Información General -->
+    <div class="step" data-step="1">
+      <h2 class="step-title">Información General</h2>
+      <p class="step-subtitle">Sobre comunicación y recursos en tu área</p>
+      <div class="error-msg" id="error-1">⚠️ Por favor responde todas las preguntas antes de continuar</div>
+      <div id="questions-1"></div>
+    </div>
+
+    <!-- Step 2: Liderazgo -->
+    <div class="step" data-step="2">
+      <h2 class="step-title">Liderazgo</h2>
+      <p class="step-subtitle">Sobre la gestión de tu superior directo</p>
+      <div class="error-msg" id="error-2">⚠️ Por favor responde todas las preguntas antes de continuar</div>
+      <div id="questions-2"></div>
+    </div>
+
+    <!-- Step 3: Capacitación -->
+    <div class="step" data-step="3">
+      <h2 class="step-title">Capacitación</h2>
+      <p class="step-subtitle">Sobre formación y desarrollo profesional</p>
+      <div class="error-msg" id="error-3">⚠️ Por favor responde todas las preguntas antes de continuar</div>
+      <div id="questions-3"></div>
+    </div>
+
+    <!-- Step 4: Evaluación de Desempeño -->
+    <div class="step" data-step="4">
+      <h2 class="step-title">Evaluación de Desempeño</h2>
+      <p class="step-subtitle">Sobre los procesos de evaluación</p>
+      <div class="error-msg" id="error-4">⚠️ Por favor responde todas las preguntas antes de continuar</div>
+      <div id="questions-4"></div>
+    </div>
+
+    <!-- Step 5: Satisfacción Laboral -->
+    <div class="step" data-step="5">
+      <h2 class="step-title">Satisfacción Laboral</h2>
+      <p class="step-subtitle">Tu percepción general sobre el trabajo</p>
+      <div class="error-msg" id="error-5">⚠️ Por favor responde todas las preguntas antes de continuar</div>
+      <div id="questions-5"></div>
+    </div>
+
+    <!-- End Screen -->
+    <div class="step" data-step="end">
+      <div class="end-screen">
+        <div class="success-icon">✓</div>
+        <h2>¡Gracias por participar!</h2>
+        <p>Tus respuestas han sido registradas correctamente. Tu opinión es fundamental para seguir mejorando.</p>
+        <div class="summary" id="summary"></div>
+        <button class="btn btn-next" onclick="restartSurvey()" style="margin: 0 auto;">
+          🔄 Realizar otra encuesta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer" id="footer" style="display:none;">
+    <button class="btn btn-prev" id="prevBtn" onclick="prevStep()">
+      ← Anterior
+    </button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextStep()">
+      Siguiente →
+    </button>
+  </div>
+</div>
+
+<script type="module">
+  import { db, collection, addDoc } from './js/firebase-config.js';
+
+  const surveyData = {
+    1: {
+      title: "Información General",
+      questions: [
+        { q: "¿Recibe la información necesaria para desempeñarse en su puesto?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
+        { q: "¿Los medios de comunicación del área son adecuados?", options: ["Muy inadecuados", "Poco adecuados", "Adecuados", "Muy adecuados"] },
+        { q: "¿La comunicación entre áreas es adecuada?", options: ["Muy inadecuada", "Poco adecuada", "Adecuada", "Muy adecuada"] },
+        { q: "¿Los comunicados son fáciles de entender?", options: ["Muy difíciles", "Difíciles", "Fáciles", "Muy fáciles"] },
+        { q: "¿Su superior comunica claramente tareas y objetivos?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] }
+      ]
+    },
+    2: {
+      title: "Liderazgo",
+      questions: [
+        { q: "¿Su superior demuestra capacidad para dirigir el equipo?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
+        { q: "¿Su superior promueve el cumplimiento de los objetivos del área?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
+        { q: "¿Recibe retroalimentación útil?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
+        { q: "¿Confía en las decisiones de su superior?", options: ["Nada", "Poco", "Bastante", "Mucho"] },
+        { q: "¿Su superior brinda apoyo cuando surgen dificultades laborales?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] }
+      ]
+    },
+    3: {
+      title: "Capacitación",
+      questions: [
+        { q: "¿Recibió una capacitación adecuada para realizar su trabajo de manera eficiente?", options: ["No recibí", "Sí la recibí"] },
+        { q: "¿Alguna vez ha tenido dificultad a la hora de realizar tareas por falta de capacitación?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
+        { q: "¿Considera necesario recibir más capacitaciones para desempeñar mejor su trabajo?", options: ["Nada", "Poco", "Bastante"] },
+        { q: "¿Ha participado en alguna capacitación durante el último año?", options: ["Ninguna", "1", "2-3", "Más de 3"] },
+        { q: "¿Las capacitaciones recibidas han sido útiles para su trabajo?", options: ["Nada útiles", "Poco útiles", "Útiles", "Muy útiles"] }
+      ]
+    },
+    4: {
+      title: "Evaluación de Desempeño",
+      questions: [
+        { q: "¿Recibió alguna vez una evaluación de desempeño?", options: ["Nunca", "Una vez", "Algunas veces", "Frecuentemente"] },
+        { q: "¿Recibió una explicación de los resultados obtenidos?", options: ["Nunca", "A veces", "Casi siempre", "Siempre"] },
+        { q: "¿Conoce los criterios utilizados para evaluar su desempeño?", options: ["Nada", "Poco", "Bastante", "Totalmente"] },
+        { q: "¿Considera que una evaluación de desempeño favorecería el desempeño de los empleados?", options: ["Nada", "Poco", "Bastante", "Mucho"] },
+        { q: "¿Considera importante implementar evaluaciones de desempeño en la empresa?", options: ["Nada importante", "Poco importante", "Importante", "Muy importante"] }
+      ]
+    },
+    5: {
+      title: "Satisfacción Laboral",
+      questions: [
+        { q: "¿Se siente satisfecho con su trabajo actual?", options: ["Nada", "Poco", "Bastante", "Mucho"] },
+        { q: "¿Se siente valorado por la organización?", options: ["Nada", "Poco", "Bastante", "Mucho"] },
+        { q: "¿Está conforme con el ambiente laboral?", options: ["Nada", "Poco", "Bastante", "Mucho"] },
+        { q: "¿Considera que existen oportunidades de crecimiento?", options: ["Ninguna", "Pocas", "Varias", "Bastantes"] }
+      ]
+    }
+  };
+
+  const totalSteps = 5;
+  let currentStep = 0;
+  const answers = {};
+
+  function renderQuestions() {
+    for (let step = 1; step <= totalSteps; step++) {
+      const container = document.getElementById(`questions-${step}`);
+      const section = surveyData[step];
+      container.innerHTML = section.questions.map((q, idx) => {
+        const questionId = `q${step}_${idx}`;
+        return `
+          <div class="question">
+            <div class="question-text">
+              <span class="question-number">${idx + 1}</span>
+              <span>${q.q}</span>
+            </div>
+            <div class="options" data-question="${questionId}">
+              ${q.options.map(opt => `
+                <button class="option-btn" data-value="${opt}" onclick="selectOption('${questionId}', '${opt.replace(/'/g, "\\'")}', this)">
+                  ${opt}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  window.selectOption = function(questionId, value, btn) {
+    const parent = btn.parentElement;
+    parent.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    answers[questionId] = value;
+    const stepNum = questionId.split('_')[0].replace('q', '');
+    document.getElementById(`error-${stepNum}`).classList.remove('show');
+  }
+
+  function validateStep(step) {
+    const section = surveyData[step];
+    for (let i = 0; i < section.questions.length; i++) {
+      const qId = `q${step}_${i}`;
+      if (!answers[qId]) return false;
+    }
+    return true;
+  }
+
+  function updateProgress() {
+    const percent = (currentStep / totalSteps) * 100;
+    document.getElementById('progressFill').style.width = percent + '%';
+    document.getElementById('stepLabel').textContent = `Paso ${currentStep} de ${totalSteps}`;
+    document.getElementById('percentLabel').textContent = Math.round(percent) + '%';
+    const dots = document.querySelectorAll('.step-dot');
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle('active', idx < currentStep);
+    });
+  }
+
+  function showStep(step) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    if (step === 0) {
+      document.querySelector('[data-step="welcome"]').classList.add('active');
+      document.getElementById('progressContainer').style.display = 'none';
+      document.getElementById('footer').style.display = 'none';
+    } else if (step === 6) {
+      document.querySelector('[data-step="end"]').classList.add('active');
+      document.getElementById('progressContainer').style.display = 'none';
+      document.getElementById('footer').style.display = 'none';
+      showSummary();
+    } else {
+      document.querySelector(`[data-step="${step}"]`).classList.add('active');
+      document.getElementById('progressContainer').style.display = 'block';
+      document.getElementById('footer').style.display = 'flex';
+      updateProgress();
+      document.getElementById('prevBtn').disabled = step === 1;
+      document.getElementById('nextBtn').textContent = step === totalSteps ? 'Finalizar ✓' : 'Siguiente →';
+    }
+  }
+
+  async function saveToFirebase() {
+    try {
+      await addDoc(collection(db, "respuestas"), {
+        respuestas: answers,
+        fecha: new Date().toISOString()
+      });
+      return true;
+    } catch (error) {
+      console.error("Error guardando:", error);
+      return false;
+    }
+  }
+
+  window.nextStep = async function() {
+    if (currentStep === 0) {
+      currentStep = 1;
+      showStep(currentStep);
+      return;
+    }
+    
+    if (currentStep >= 1 && currentStep <= totalSteps) {
+      if (!validateStep(currentStep)) {
+        document.getElementById(`error-${currentStep}`).classList.add('show');
+        return;
+      }
+    }
+    
+    if (currentStep < totalSteps) {
+      currentStep++;
+      showStep(currentStep);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.textContent = 'Guardando...';
+      nextBtn.disabled = true;
+      
+      const saved = await saveToFirebase();
+      
+      if (saved) {
+        currentStep = 6;
+        showStep(currentStep);
+      } else {
+        alert('❌ Error al guardar. Por favor intentá de nuevo.');
+        nextBtn.textContent = 'Finalizar ✓';
+        nextBtn.disabled = false;
+      }
+    }
+  }
+
+  window.prevStep = function() {
+    if (currentStep > 1) {
+      currentStep--;
+      showStep(currentStep);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function showSummary() {
+    const summary = document.getElementById('summary');
+    let html = '<h3 style="margin-bottom:18px;color:#2d3a2e;font-size:1.2rem;font-weight:800;">📊 Resumen de tus respuestas</h3>';
+    for (let step = 1; step <= totalSteps; step++) {
+      const section = surveyData[step];
+      html += `<div style="margin-bottom:18px;"><strong style="color:#52796f;font-size:0.95rem;display:block;margin-bottom:8px;">${section.title}</strong>`;
+      section.questions.forEach((q, idx) => {
+        const qId = `q${step}_${idx}`;
+        const ans = answers[qId] || 'Sin respuesta';
+        html += `
+          <div class="summary-item">
+            <span class="summary-label">${q.q.substring(0, 55)}${q.q.length > 55 ? '...' : ''}</span>
+            <span class="summary-value">${ans}</span>
+          </div>
+        `;
+      });
+      html += '</div>';
+    }
+    summary.innerHTML = html;
+  }
+
+  window.restartSurvey = function() {
+    if (confirm('¿Estás seguro de que deseas reiniciar la encuesta?')) {
+      for (let key in answers) delete answers[key];
+      currentStep = 0;
+      document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      showStep(0);
+    }
+  }
+
+  function createStepDots() {
+    const indicator = document.getElementById('stepsIndicator');
+    for (let i = 0; i < totalSteps; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'step-dot';
+      indicator.appendChild(dot);
+    }
+  }
+
+  renderQuestions();
+  createStepDots();
+  showStep(0);
+</script>
+
+</body>
+</html>
